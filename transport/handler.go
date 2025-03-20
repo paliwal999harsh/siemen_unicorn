@@ -15,10 +15,6 @@ type UnicornHandler struct {
 	unicornRequestService service.UnicornRequestService
 }
 
-type UnicornRequestHandler struct {
-	unicornRequestService service.UnicornRequestService
-}
-
 func NewUnicornHandler(unicornService service.UnicornService,
 	unicornRequestService service.UnicornRequestService) UnicornHandler {
 	return UnicornHandler{
@@ -26,12 +22,7 @@ func NewUnicornHandler(unicornService service.UnicornService,
 		unicornRequestService: unicornRequestService}
 }
 
-func NewUnicornRequestHandler(unicornRequestService service.UnicornRequestService) UnicornRequestHandler {
-	return UnicornRequestHandler{unicornRequestService: unicornRequestService}
-}
-
-func (h *UnicornRequestHandler) RequestUnicorn(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+func (h *UnicornHandler) RequestUnicorn(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -45,11 +36,10 @@ func (h *UnicornRequestHandler) RequestUnicorn(w http.ResponseWriter, r *http.Re
 	}
 	reqID := h.unicornRequestService.CreateRequest(amount)
 	w.WriteHeader(http.StatusAccepted)
-	w.Write(fmt.Append(nil, utils.GetAsJsonString(&model.RequestAcceptedResponse{ReqId: reqID})))
+	_, _ = w.Write(fmt.Append(nil, utils.GetAsJsonString(&model.RequestAcceptedResponse{ReqId: reqID})))
 }
 
-func (h *UnicornRequestHandler) CheckRequestStatus(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+func (h *UnicornHandler) CheckRequestStatus(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -66,11 +56,10 @@ func (h *UnicornRequestHandler) CheckRequestStatus(w http.ResponseWriter, r *htt
 			http.StatusNotFound)
 		return
 	}
-	w.Write(fmt.Append(nil, utils.GetAsJsonString(req)))
+	_, _ = w.Write(fmt.Append(nil, utils.GetAsJsonString(req)))
 }
 
 func (h *UnicornHandler) GetUnicorn(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
 	values := r.URL.Query()
 	reqId := model.UnicornRequestId(values.Get("id"))
 	req, ok := h.unicornRequestService.GetRequest(reqId)
@@ -80,7 +69,7 @@ func (h *UnicornHandler) GetUnicorn(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.RequestedAmount == req.ReceivedAmount {
 		w.WriteHeader(http.StatusNoContent)
-		w.Write(fmt.Append(nil, utils.GetAsJsonString(&model.ApiResponse{Msg: "Unicorn Request Completed"})))
+		_, _ = w.Write(fmt.Append(nil, utils.GetAsJsonString(&model.ApiResponse{Msg: "Unicorn Request Completed"})))
 		return
 	}
 	items := h.unicornService.GetUnicorn(reqId)
@@ -88,5 +77,5 @@ func (h *UnicornHandler) GetUnicorn(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
-	w.Write(fmt.Append(nil, utils.GetAsJsonString(items)))
+	_, _ = w.Write(fmt.Append(nil, utils.GetAsJsonString(items)))
 }

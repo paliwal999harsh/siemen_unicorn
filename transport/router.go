@@ -1,26 +1,20 @@
 package transport
 
 import (
+	"encoding/json"
 	"net/http"
-	"unicorn/middleware"
+	"unicorn/model"
 )
 
-func RegisterHealthCheckRoute() {
-	http.Handle("/api/v1/health", middleware.RequestLogger(http.HandlerFunc(
-		func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("OK"))
-		})))
+func RegisterHealthCheckRoute(mux *http.ServeMux) {
+	mux.HandleFunc("/api/v1/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(model.ApiResponse{Msg: "OK"})
+	})
 }
 
-func RegisterUnicornRoutes(unicornHandler UnicornHandler) {
-	http.Handle("/api/v1/unicorn", middleware.RequestLogger(http.HandlerFunc(unicornHandler.GetUnicorn)))
-	// http.HandleFunc("/api/v1/unicorn", unicornHandler.GetUnicorn)
-}
-
-func RegisterUnicornRequestRoutes(unicornRequestHandler UnicornRequestHandler) {
-	http.Handle("/api/v1/unicorn/request", middleware.RequestLogger(http.HandlerFunc(unicornRequestHandler.RequestUnicorn)))
-	http.Handle("/api/v1/unicorn/request/", middleware.RequestLogger(http.HandlerFunc(unicornRequestHandler.CheckRequestStatus)))
-
-	// http.HandleFunc("/api/v1/unicorn/request/", unicornRequestHandler.HandleRequestUnicorn)
+func RegisterUnicornRoutes(mux *http.ServeMux, unicornHandler UnicornHandler) {
+	mux.HandleFunc("/api/v1/unicorn", unicornHandler.GetUnicorn)
+	mux.HandleFunc("/api/v1/unicorn/request", unicornHandler.RequestUnicorn)
+	mux.HandleFunc("/api/v1/unicorn/request/", unicornHandler.CheckRequestStatus)
 }

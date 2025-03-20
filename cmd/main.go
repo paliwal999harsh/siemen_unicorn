@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+	"unicorn/middleware"
 	"unicorn/service/impl"
 	"unicorn/storage"
 	"unicorn/transport"
@@ -26,13 +27,13 @@ func main() {
 	unicornRequestService := impl.NewUnicornRequestService(&unicornRequestStorage)
 
 	unicornHandler := transport.NewUnicornHandler(unicornService, unicornRequestService)
-	unicornRequestHandler := transport.NewUnicornRequestHandler(unicornRequestService)
 
-	transport.RegisterHealthCheckRoute()
-	transport.RegisterUnicornRoutes(unicornHandler)
-	transport.RegisterUnicornRequestRoutes(unicornRequestHandler)
+	mux := http.NewServeMux()
+	transport.RegisterHealthCheckRoute(mux)
+	transport.RegisterUnicornRoutes(mux, unicornHandler)
+	wrappedMux := middleware.LoggerMiddleware(middleware.JsonMiddleware(mux))
 
-	setupServer()
+	setupServer(wrappedMux)
 	log.Println("Server started successfully...")
 }
 
@@ -43,8 +44,8 @@ func unicornSupplier(storage *storage.InMemoryUnicornStorage, producer storage.U
 	}
 }
 
-func setupServer() {
-	server := &http.Server{Addr: ":8888"}
+func setupServer(mux http.Handler) {
+	server := &http.Server{Addr: ":8888", Handler: mux}
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 	go func() {

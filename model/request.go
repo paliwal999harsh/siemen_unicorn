@@ -17,7 +17,7 @@ func (u UnicornRequestStatus) String() string {
 	case UnicornRequestInProgress:
 		return "IN_PROGRESS"
 	case UnicornRequestCompleted:
-		return "REQUEST_COMPLETED"
+		return "COMPLETED"
 	default:
 		return "UNICORN_REQUEST_STATUS_UNSPECIFIED"
 	}
