@@ -7,17 +7,14 @@ import (
 )
 
 type unicornService struct {
-	unicornProducer       storage.UnicornProducer
-	unicornStorage        storage.UnicornStorage
+	unicornStore          storage.UnicornStore
 	unicornRequestStorage storage.RequestTracker
 }
 
-func NewUnicornService(unicornProducer storage.UnicornProducer,
-	unicornStorage storage.UnicornStorage,
+func NewUnicornService(unicornStorage storage.UnicornStore,
 	unicornRequestStorage storage.RequestTracker) service.UnicornService {
 	return &unicornService{
-		unicornProducer:       unicornProducer,
-		unicornStorage:        unicornStorage,
+		unicornStore:          unicornStorage,
 		unicornRequestStorage: unicornRequestStorage}
 }
 
@@ -29,17 +26,15 @@ func (s *unicornService) GetUnicorn(reqId model.UnicornRequestId) []model.Unicor
 	if req.Status == model.UnicornRequestQueued {
 		return nil
 	}
-	var data = make(chan []model.Unicorn)
-	go func(reqId model.UnicornRequestId, req model.UnicornRequest, data chan []model.Unicorn) {
-		var items []model.Unicorn
-		amount := req.RequestedAmount - req.ReceivedAmount
-		items = s.unicornStorage.GetUnicorns(amount)
-		req.ReceivedAmount += len(items)
-		if req.RequestedAmount == req.ReceivedAmount {
+	if req.Status == model.UnicornRequestInProgress {
+		take := req.AvailableAmount
+		req.AvailableAmount = 0
+		req.ReceivedAmount += take
+		if req.ReceivedAmount == req.RequestedAmount {
 			req.Status = model.UnicornRequestCompleted
 		}
 		s.unicornRequestStorage.UpdateRequest(reqId, req)
-		data <- items
-	}(reqId, req, data)
-	return <-data
+		return s.unicornStore.GetUnicorns(take)
+	}
+	return nil
 }

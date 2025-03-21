@@ -32,5 +32,10 @@ type UnicornRequest struct {
 	Status          UnicornRequestStatus `json:"status"`
 	RequestedAmount int                  `json:"requested_amount"`
 	ReceivedAmount  int                  `json:"received_amount"`
+	AvailableAmount int                  `json:"available_amount"`
 }
 type UnicornRequestId string
+
+func (id UnicornRequestId) String() string {
+	return string(id)
+}

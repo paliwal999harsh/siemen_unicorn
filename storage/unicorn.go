@@ -1,35 +1,64 @@
 package storage
 
 import (
+	"sync"
 	"unicorn/model"
 )
 
-type UnicornStorage interface {
+type UnicornStore interface {
 	SaveUnicorn(model.Unicorn)
 	GetUnicorns(int) []model.Unicorn
+	AvailableUnicorns() int
+	Capacity() int
+	DecreaseCapacity(int)
 }
 
-type InMemoryUnicornStorage struct {
-	unicorns chan model.Unicorn
+type InMemoryUnicornStore struct {
+	unicorns []model.Unicorn
+	capacity int
+	sync.Mutex
 }
 
-func NewInMemoryUnicornStorage() *InMemoryUnicornStorage {
-	return &InMemoryUnicornStorage{unicorns: make(chan model.Unicorn, 10)}
+func NewInMemoryUnicornStore() UnicornStore {
+	return &InMemoryUnicornStore{unicorns: make([]model.Unicorn, 0, 100), capacity: 0}
 }
 
-func (us *InMemoryUnicornStorage) SaveUnicorn(u model.Unicorn) {
-	us.unicorns <- u
+func (us *InMemoryUnicornStore) SaveUnicorn(u model.Unicorn) {
+	us.Lock()
+	defer us.Unlock()
+	us.unicorns = append([]model.Unicorn{u}, us.unicorns...)
+	us.capacity++
 }
 
-func (us *InMemoryUnicornStorage) GetUnicorns(amount int) []model.Unicorn {
-	if amount > len(us.unicorns) {
-		amount = len(us.unicorns)
+func (us *InMemoryUnicornStore) GetUnicorns(amount int) []model.Unicorn {
+	us.Lock()
+	defer us.Unlock()
+
+	if len(us.unicorns) == 0 {
+		return nil
 	}
+	unicorns := us.unicorns[len(us.unicorns)-amount:]
+	us.unicorns = us.unicorns[:len(us.unicorns)-amount]
+	return unicorns
+}
 
-	result := make([]model.Unicorn, amount)
-	for i := 0; i < amount; i++ {
-		u := <-us.unicorns
-		result[i] = u
-	}
-	return result
+func (us *InMemoryUnicornStore) AvailableUnicorns() int {
+	us.Lock()
+	defer us.Unlock()
+
+	return len(us.unicorns)
+}
+
+func (us *InMemoryUnicornStore) Capacity() int {
+	us.Lock()
+	defer us.Unlock()
+
+	return us.capacity
+}
+
+func (us *InMemoryUnicornStore) DecreaseCapacity(capacity int) {
+	us.Lock()
+	defer us.Unlock()
+
+	us.capacity -= capacity
 }

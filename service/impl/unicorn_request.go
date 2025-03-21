@@ -27,11 +27,5 @@ func (u *unicornRequestService) GetRequest(reqId model.UnicornRequestId) (model.
 func (u *unicornRequestService) CreateRequest(amount int) model.UnicornRequestId {
 	reqId := model.UnicornRequestId(fmt.Sprintf("REQ-%d", time.Now().Unix()))
 	u.unicornRequestStorage.CreateRequest(reqId, amount)
-	go func(reqId model.UnicornRequestId) {
-		time.Sleep(10 * time.Second)
-		req, _ := u.unicornRequestStorage.GetRequest(reqId)
-		req.Status = model.UnicornRequestInProgress
-		u.unicornRequestStorage.UpdateRequest(reqId, req)
-	}(reqId)
 	return reqId
 }

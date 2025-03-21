@@ -30,13 +30,21 @@ func (h *UnicornHandler) RequestUnicorn(w http.ResponseWriter, r *http.Request) 
 	values := r.URL.Query()
 	amount, err := strconv.Atoi(values.Get("amount"))
 	if err != nil {
-		http.Error(w, utils.GetAsJsonString(&model.ApiResponse{Msg: "please give amount in natural numbers"}),
+		utils.WriteJsonResponseWithStatus(w,
+			&model.ApiResponse{Msg: "please give amount in natural numbers"},
+			http.StatusBadRequest)
+		return
+	}
+	if amount <= 0 {
+		utils.WriteJsonResponseWithStatus(w,
+			&model.ApiResponse{Msg: "amount must be positive"},
 			http.StatusBadRequest)
 		return
 	}
 	reqID := h.unicornRequestService.CreateRequest(amount)
-	w.WriteHeader(http.StatusAccepted)
-	_, _ = w.Write(fmt.Append(nil, utils.GetAsJsonString(&model.RequestAcceptedResponse{ReqId: reqID})))
+	utils.WriteJsonResponseWithStatus(w,
+		&model.RequestAcceptedResponse{ReqId: reqID},
+		http.StatusAccepted)
 }
 
 func (h *UnicornHandler) CheckRequestStatus(w http.ResponseWriter, r *http.Request) {
@@ -52,11 +60,12 @@ func (h *UnicornHandler) CheckRequestStatus(w http.ResponseWriter, r *http.Reque
 	reqId := model.UnicornRequestId(pathParts[5])
 	req, ok := h.unicornRequestService.GetRequest(reqId)
 	if !ok {
-		http.Error(w, utils.GetAsJsonString(&model.ApiResponse{Msg: fmt.Sprintf("invalid req id: %s", reqId)}),
+		utils.WriteJsonResponseWithStatus(w,
+			&model.ApiResponse{Msg: fmt.Sprintf("invalid req id: %s", reqId)},
 			http.StatusNotFound)
 		return
 	}
-	_, _ = w.Write(fmt.Append(nil, utils.GetAsJsonString(req)))
+	utils.WriteJsonResponse(w, req)
 }
 
 func (h *UnicornHandler) GetUnicorn(w http.ResponseWriter, r *http.Request) {
@@ -72,8 +81,9 @@ func (h *UnicornHandler) GetUnicorn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if req.RequestedAmount == req.ReceivedAmount {
-		w.WriteHeader(http.StatusNoContent)
-		_, _ = w.Write(fmt.Append(nil, utils.GetAsJsonString(&model.ApiResponse{Msg: "Unicorn Request Completed"})))
+		utils.WriteJsonResponseWithStatus(w,
+			&model.ApiResponse{Msg: "Unicorn Request Completed"},
+			http.StatusNoContent)
 		return
 	}
 	items := h.unicornService.GetUnicorn(reqId)
@@ -81,5 +91,5 @@ func (h *UnicornHandler) GetUnicorn(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
-	_, _ = w.Write(fmt.Append(nil, utils.GetAsJsonString(items)))
+	utils.WriteJsonResponse(w, items)
 }
