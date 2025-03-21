@@ -60,6 +60,10 @@ func (h *UnicornHandler) CheckRequestStatus(w http.ResponseWriter, r *http.Reque
 }
 
 func (h *UnicornHandler) GetUnicorn(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
 	values := r.URL.Query()
 	reqId := model.UnicornRequestId(values.Get("id"))
 	req, ok := h.unicornRequestService.GetRequest(reqId)

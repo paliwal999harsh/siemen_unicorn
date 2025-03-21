@@ -14,8 +14,8 @@ type InMemoryRequestTracker struct {
 	requests sync.Map
 }
 
-func NewInMemoryRequestTracker() InMemoryRequestTracker {
-	return InMemoryRequestTracker{}
+func NewInMemoryRequestTracker() RequestTracker {
+	return &InMemoryRequestTracker{}
 }
 
 func (rt *InMemoryRequestTracker) CreateRequest(id model.UnicornRequestId, amount int) {

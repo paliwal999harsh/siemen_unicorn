@@ -9,12 +9,12 @@ import (
 type unicornService struct {
 	unicornProducer       storage.UnicornProducer
 	unicornStorage        storage.UnicornStorage
-	unicornRequestStorage *storage.InMemoryRequestTracker
+	unicornRequestStorage storage.RequestTracker
 }
 
 func NewUnicornService(unicornProducer storage.UnicornProducer,
 	unicornStorage storage.UnicornStorage,
-	unicornRequestStorage *storage.InMemoryRequestTracker) service.UnicornService {
+	unicornRequestStorage storage.RequestTracker) service.UnicornService {
 	return &unicornService{
 		unicornProducer:       unicornProducer,
 		unicornStorage:        unicornStorage,
@@ -24,6 +24,9 @@ func NewUnicornService(unicornProducer storage.UnicornProducer,
 func (s *unicornService) GetUnicorn(reqId model.UnicornRequestId) []model.Unicorn {
 	req, ok := s.unicornRequestStorage.GetRequest(reqId)
 	if !ok {
+		return nil
+	}
+	if req.Status == model.UnicornRequestQueued {
 		return nil
 	}
 	var data = make(chan []model.Unicorn)

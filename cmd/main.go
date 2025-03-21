@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -23,8 +22,8 @@ func main() {
 
 	go unicornSupplier(unicornStorage, unicornProducer)
 
-	unicornService := impl.NewUnicornService(unicornProducer, unicornStorage, &unicornRequestStorage)
-	unicornRequestService := impl.NewUnicornRequestService(&unicornRequestStorage)
+	unicornService := impl.NewUnicornService(unicornProducer, unicornStorage, unicornRequestStorage)
+	unicornRequestService := impl.NewUnicornRequestService(unicornRequestStorage)
 
 	unicornHandler := transport.NewUnicornHandler(unicornService, unicornRequestService)
 
@@ -50,16 +49,16 @@ func setupServer(mux http.Handler) {
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-quit
-		fmt.Println("Shutting down server...")
+		log.Println("Shutting down server...")
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		if err := server.Shutdown(ctx); err != nil {
-			fmt.Println("Server forced to shutdown:", err)
+			log.Println("Server forced to shutdown:", err)
 		}
-		fmt.Println("Server exited gracefully")
+		log.Println("Server exited gracefully")
 	}()
 
 	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		fmt.Println("Server failed to start:", err)
+		log.Println("Server failed to start:", err)
 	}
 }

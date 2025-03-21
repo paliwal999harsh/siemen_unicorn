@@ -9,10 +9,10 @@ import (
 )
 
 type unicornRequestService struct {
-	unicornRequestStorage *storage.InMemoryRequestTracker
+	unicornRequestStorage storage.RequestTracker
 }
 
-func NewUnicornRequestService(unicornRequestStorage *storage.InMemoryRequestTracker) service.UnicornRequestService {
+func NewUnicornRequestService(unicornRequestStorage storage.RequestTracker) service.UnicornRequestService {
 	return &unicornRequestService{unicornRequestStorage: unicornRequestStorage}
 }
 
@@ -28,6 +28,7 @@ func (u *unicornRequestService) CreateRequest(amount int) model.UnicornRequestId
 	reqId := model.UnicornRequestId(fmt.Sprintf("REQ-%d", time.Now().Unix()))
 	u.unicornRequestStorage.CreateRequest(reqId, amount)
 	go func(reqId model.UnicornRequestId) {
+		time.Sleep(10 * time.Second)
 		req, _ := u.unicornRequestStorage.GetRequest(reqId)
 		req.Status = model.UnicornRequestInProgress
 		u.unicornRequestStorage.UpdateRequest(reqId, req)
