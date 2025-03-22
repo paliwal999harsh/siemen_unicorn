@@ -1,6 +1,9 @@
 package model
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"sync/atomic"
+)
 
 type UnicornRequestStatus int
 
@@ -29,11 +32,26 @@ func (u UnicornRequestStatus) MarshalJSON() ([]byte, error) {
 }
 
 type UnicornRequest struct {
-	Status          UnicornRequestStatus `json:"status"`
-	RequestedAmount int                  `json:"requested_amount"`
-	ReceivedAmount  int                  `json:"received_amount"`
-	AvailableAmount int                  `json:"available_amount"`
+	Status          UnicornRequestStatus
+	RequestedAmount int
+	ReceivedAmount  atomic.Int32
+	AvailableAmount atomic.Int32
 }
+
+func (u *UnicornRequest) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&struct {
+		Status          UnicornRequestStatus `json:"status"`
+		RequestedAmount int                  `json:"requested_amount"`
+		ReceivedAmount  int                  `json:"received_amount"`
+		AvailableAmount int                  `json:"available_amount"`
+	}{
+		Status:          u.Status,
+		RequestedAmount: u.RequestedAmount,
+		ReceivedAmount:  int(u.ReceivedAmount.Load()),
+		AvailableAmount: int(u.AvailableAmount.Load()),
+	})
+}
+
 type UnicornRequestId string
 
 func (id UnicornRequestId) String() string {

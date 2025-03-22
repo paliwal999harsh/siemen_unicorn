@@ -20,7 +20,7 @@ const (
 	MaxStoreCapacity          = 100
 	BatchProduction           = 10
 	UnicornProductionInterval = 5
-	RequestProcessingInterval = 2
+	RequestProcessingInterval = 5
 )
 
 func main() {
@@ -75,19 +75,19 @@ func unicornRequestProcessor(ctx context.Context, capacityManager storage.Unicor
 				continue
 			}
 			if req.Status != model.UnicornRequestCompleted {
-				if req.AvailableAmount >= BatchProduction {
+				if req.AvailableAmount.Load() >= BatchProduction {
 					continue
 				}
 				unicornsAvailable := capacityManager.Capacity()
 				if unicornsAvailable > 0 {
-					take := min(BatchProduction, req.RequestedAmount-req.ReceivedAmount, unicornsAvailable)
+					take := min(BatchProduction, req.RequestedAmount-int(req.ReceivedAmount.Load()), unicornsAvailable)
 					capacityManager.DecreaseCapacity(take)
-					req.AvailableAmount += take
+					req.AvailableAmount.Add(int32(take))
 					req.Status = model.UnicornRequestInProgress
 					unicornRequestStorage.UpdateRequest(reqId, req)
-					log.Printf("Fulfilling request: %s, Have: %d, Given %d/%d\n", reqId, req.AvailableAmount, req.ReceivedAmount, req.RequestedAmount)
+					log.Printf("Fulfilling request: %s, Have: %d, Given %d/%d\n", reqId, req.AvailableAmount.Load(), req.ReceivedAmount.Load(), req.RequestedAmount)
 				}
-				if (req.ReceivedAmount + req.AvailableAmount) < req.RequestedAmount {
+				if int(req.ReceivedAmount.Load()+req.AvailableAmount.Load()) < req.RequestedAmount {
 					unicornRequestStorage.RequeueRequest(reqId, req)
 				}
 			}

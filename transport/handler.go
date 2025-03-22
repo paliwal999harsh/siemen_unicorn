@@ -96,7 +96,7 @@ func (h *UnicornHandler) GetUnicorn(w http.ResponseWriter, r *http.Request) {
 			http.StatusNotFound)
 		return
 	}
-	if req.RequestedAmount == req.ReceivedAmount {
+	if req.RequestedAmount == int(req.ReceivedAmount.Load()) {
 		utils.WriteJsonResponseWithStatus(w,
 			&model.ApiResponse{Msg: "Unicorn Request Completed"},
 			http.StatusNoContent)

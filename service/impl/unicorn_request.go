@@ -16,10 +16,10 @@ func NewUnicornRequestService(unicornRequestStorage storage.RequestTracker) serv
 	return &unicornRequestService{unicornRequestStorage: unicornRequestStorage}
 }
 
-func (u *unicornRequestService) GetRequest(reqId model.UnicornRequestId) (model.UnicornRequest, bool) {
+func (u *unicornRequestService) GetRequest(reqId model.UnicornRequestId) (*model.UnicornRequest, bool) {
 	req, ok := u.unicornRequestStorage.GetRequest(reqId)
 	if !ok {
-		return model.UnicornRequest{}, false
+		return &model.UnicornRequest{}, false
 	}
 	return req, true
 }

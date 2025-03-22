@@ -27,14 +27,14 @@ func (s *unicornService) GetUnicorn(reqId model.UnicornRequestId) []model.Unicor
 		return nil
 	}
 	if req.Status == model.UnicornRequestInProgress {
-		take := req.AvailableAmount
-		req.AvailableAmount = 0
-		req.ReceivedAmount += take
-		if req.ReceivedAmount == req.RequestedAmount {
+		take := req.AvailableAmount.Load()
+		req.AvailableAmount.Store(0)
+		req.ReceivedAmount.Add(take)
+		if int(req.ReceivedAmount.Load()) == req.RequestedAmount {
 			req.Status = model.UnicornRequestCompleted
 		}
 		s.unicornRequestStorage.UpdateRequest(reqId, req)
-		return s.unicornStore.GetUnicorns(take)
+		return s.unicornStore.GetUnicorns(int(take))
 	}
 	return nil
 }
