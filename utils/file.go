@@ -15,3 +15,11 @@ func GetFileContent(filePath string) []string {
 	content := strings.Split(string(file), "\n")
 	return content
 }
+
+func LoadContentFromFile(filepath string) []string {
+	content := GetFileContent(filepath)
+	if content == nil {
+		log.Fatalf("unable to load content from file: %s", filepath)
+	}
+	return content
+}

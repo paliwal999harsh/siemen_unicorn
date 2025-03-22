@@ -28,6 +28,12 @@ func (h *UnicornHandler) RequestUnicorn(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	values := r.URL.Query()
+	if !values.Has("amount") {
+		utils.WriteJsonResponseWithStatus(w,
+			&model.ApiResponse{Msg: "query mandatory param 'amount' not found."},
+			http.StatusBadRequest)
+		return
+	}
 	amount, err := strconv.Atoi(values.Get("amount"))
 	if err != nil {
 		utils.WriteJsonResponseWithStatus(w,
@@ -54,14 +60,16 @@ func (h *UnicornHandler) CheckRequestStatus(w http.ResponseWriter, r *http.Reque
 	}
 	pathParts := strings.Split(r.URL.Path, "/")
 	if len(pathParts) < 6 || pathParts[5] == "" {
-		w.WriteHeader(http.StatusBadRequest)
+		utils.WriteJsonResponseWithStatus(w,
+			&model.ApiResponse{Msg: "please provide request 'id' in url path"},
+			http.StatusBadRequest)
 		return
 	}
 	reqId := model.UnicornRequestId(pathParts[5])
 	req, ok := h.unicornRequestService.GetRequest(reqId)
 	if !ok {
 		utils.WriteJsonResponseWithStatus(w,
-			&model.ApiResponse{Msg: fmt.Sprintf("invalid req id: %s", reqId)},
+			&model.ApiResponse{Msg: fmt.Sprintf("invalid request id: %s", reqId)},
 			http.StatusNotFound)
 		return
 	}
@@ -74,10 +82,18 @@ func (h *UnicornHandler) GetUnicorn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	values := r.URL.Query()
+	if !values.Has("id") {
+		utils.WriteJsonResponseWithStatus(w,
+			&model.ApiResponse{Msg: "query mandatory parameter request 'id' not found."},
+			http.StatusBadRequest)
+		return
+	}
 	reqId := model.UnicornRequestId(values.Get("id"))
 	req, ok := h.unicornRequestService.GetRequest(reqId)
 	if !ok {
-		w.WriteHeader(http.StatusNotFound)
+		utils.WriteJsonResponseWithStatus(w,
+			&model.ApiResponse{Msg: "invalid request 'id', not found."},
+			http.StatusNotFound)
 		return
 	}
 	if req.RequestedAmount == req.ReceivedAmount {
@@ -88,7 +104,9 @@ func (h *UnicornHandler) GetUnicorn(w http.ResponseWriter, r *http.Request) {
 	}
 	items := h.unicornService.GetUnicorn(reqId)
 	if len(items) == 0 {
-		w.WriteHeader(http.StatusNoContent)
+		utils.WriteJsonResponseWithStatus(w,
+			&model.ApiResponse{Msg: "Unicorn not available."},
+			http.StatusNoContent)
 		return
 	}
 	utils.WriteJsonResponse(w, items)

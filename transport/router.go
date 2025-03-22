@@ -1,15 +1,20 @@
 package transport
 
 import (
-	"encoding/json"
 	"net/http"
 	"unicorn/model"
+	"unicorn/utils"
 )
 
 func RegisterHealthCheckRoute(mux *http.ServeMux) {
-	mux.HandleFunc("/api/v1/health", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(model.ApiResponse{Msg: "OK"})
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "GET" {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
+		utils.WriteJsonResponseWithStatus(w,
+			model.ApiResponse{Msg: "OK"},
+			http.StatusOK)
 	})
 }
 

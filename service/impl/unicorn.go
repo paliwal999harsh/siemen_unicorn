@@ -11,10 +11,10 @@ type unicornService struct {
 	unicornRequestStorage storage.RequestTracker
 }
 
-func NewUnicornService(unicornStorage storage.UnicornStore,
+func NewUnicornService(unicornStore storage.UnicornStore,
 	unicornRequestStorage storage.RequestTracker) service.UnicornService {
 	return &unicornService{
-		unicornStore:          unicornStorage,
+		unicornStore:          unicornStore,
 		unicornRequestStorage: unicornRequestStorage}
 }
 

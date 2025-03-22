@@ -2,7 +2,6 @@ package storage
 
 import (
 	"fmt"
-	"log"
 	"math/rand"
 	"unicorn/model"
 	"unicorn/utils"
@@ -25,22 +24,14 @@ func (s *RandomUnicornProducer) CreateUnicorn() model.Unicorn {
 }
 
 func loadData() UnicornProducer {
-	names := loadContentFromFile("res/petnames.txt")
-	adj := loadContentFromFile("res/adj.txt")
-	capabilities := loadContentFromFile("res/capabilities.txt")
+	names := utils.LoadContentFromFile("res/petnames.txt")
+	adj := utils.LoadContentFromFile("res/adj.txt")
+	capabilities := utils.LoadContentFromFile("res/capabilities.txt")
 	return &RandomUnicornProducer{
 		names:        names,
 		adjectives:   adj,
 		capabilities: capabilities,
 	}
-}
-
-func loadContentFromFile(filepath string) []string {
-	content := utils.GetFileContent(filepath)
-	if content == nil {
-		log.Fatalf("unable to load content from file: %s", filepath)
-	}
-	return content
 }
 
 func (s *RandomUnicornProducer) getName() string {
