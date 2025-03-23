@@ -13,3 +13,11 @@
 * improve the overall code
 
 * if any requirements are not clear, compile meaningful assumptions
+
+Requirements deduced from above:
+1. Asynchronous Request Processing
+2. Endpoints to Create, Check the status of request and as well as to retrieve unicorns using request-id
+3. Unicorns will be returned in LIFO manner
+4. Requests are processed in FIFO manner
+5. Unicorn Should not have duplicate capabilities
+6. Unicorn are produced after every x seconds and stored in Store

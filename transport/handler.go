@@ -99,14 +99,14 @@ func (h *UnicornHandler) GetUnicorn(w http.ResponseWriter, r *http.Request) {
 	if req.RequestedAmount == int(req.ReceivedAmount.Load()) {
 		utils.WriteJsonResponseWithStatus(w,
 			&model.ApiResponse{Msg: "Unicorn Request Completed"},
-			http.StatusNoContent)
+			http.StatusOK)
 		return
 	}
 	items := h.unicornService.GetUnicorn(reqId)
 	if len(items) == 0 {
 		utils.WriteJsonResponseWithStatus(w,
 			&model.ApiResponse{Msg: "Unicorn not available."},
-			http.StatusNoContent)
+			http.StatusOK)
 		return
 	}
 	utils.WriteJsonResponse(w, items)

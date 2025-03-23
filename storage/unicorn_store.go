@@ -15,7 +15,7 @@ type UnicornStore interface {
 	IsAtCapacity() bool
 }
 
-const MaxStoreCapacity = 100
+const MaxStoreCapacity = 1_000
 
 type InMemoryUnicornStore struct {
 	unicorns collection.Stack[model.Unicorn]

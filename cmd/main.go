@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 	"unicorn/factory"
@@ -19,20 +20,21 @@ import (
 
 const (
 	BatchProduction           = 10
-	UnicornProductionInterval = 5
-	RequestProcessingInterval = 2
+	UnicornProductionInterval = 5 * time.Second
+	RequestProcessingInterval = 2 * time.Second
 )
 
 func main() {
+	var wg sync.WaitGroup
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 
 	unicornFactory := factory.NewRandomUnicornProducer()
 	unicornStore := storage.NewInMemoryUnicornStore()
 	unicornRequestTracker := storage.NewInMemoryRequestTracker()
 
-	go unicornSupplier(ctx, unicornStore, unicornFactory)
-	go unicornRequestProcessor(ctx, unicornStore, unicornRequestTracker)
+	wg.Add(2)
+	go unicornSupplier(ctx, &wg, unicornStore, unicornFactory)
+	go unicornRequestProcessor(ctx, &wg, unicornStore, unicornRequestTracker)
 
 	unicornService := impl.NewUnicornService(unicornStore, unicornRequestTracker)
 	unicornRequestService := impl.NewUnicornRequestService(unicornRequestTracker)
@@ -44,33 +46,41 @@ func main() {
 	transport.RegisterUnicornRoutes(mux, unicornHandler)
 	wrappedMux := middleware.LoggerMiddleware(middleware.JsonMiddleware(mux))
 
-	setupServer(ctx, wrappedMux)
+	setupServer(wrappedMux, ctx, cancel)
+	wg.Wait()
+	log.Println("Application shut down successfully")
 }
 
-func unicornSupplier(ctx context.Context, store storage.UnicornStore, factory factory.UnicornFactory) {
-	ticker := time.NewTicker(UnicornProductionInterval * time.Second)
+func unicornSupplier(ctx context.Context, wg *sync.WaitGroup, store storage.UnicornStore, factory factory.UnicornFactory) {
+	defer wg.Done()
+
+	ticker := time.NewTicker(UnicornProductionInterval)
 	defer ticker.Stop()
 	for {
 		select {
 		case <-ctx.Done():
 			log.Println("Unicorn supplier stopped...")
+			return
 		case <-ticker.C:
 			if !store.IsAtCapacity() {
 				unicorn := factory.CreateUnicorn()
-				log.Println("Unicorn...", unicorn)
+				log.Println("Unicorn Created...", unicorn)
 				store.SaveUnicorn(unicorn)
 			}
 		}
 	}
 }
 
-func unicornRequestProcessor(ctx context.Context, unicornStore storage.UnicornStore, unicornRequestTracker storage.RequestTracker) {
-	ticker := time.NewTicker(RequestProcessingInterval * time.Second)
+func unicornRequestProcessor(ctx context.Context, wg *sync.WaitGroup, unicornStore storage.UnicornStore, unicornRequestTracker storage.RequestTracker) {
+	defer wg.Done()
+
+	ticker := time.NewTicker(RequestProcessingInterval)
 	defer ticker.Stop()
 	for {
 		select {
 		case <-ctx.Done():
 			log.Println("Unicorn processor stopped...")
+			return
 		case <-ticker.C:
 			reqId, req, ok := unicornRequestTracker.GetNextRequest()
 			if !ok {
@@ -98,19 +108,19 @@ func unicornRequestProcessor(ctx context.Context, unicornStore storage.UnicornSt
 	}
 }
 
-func setupServer(ctx context.Context, mux http.Handler) {
-	server := &http.Server{Addr: ":8888", Handler: mux}
+func setupServer(mux http.Handler, ctx context.Context, cancel context.CancelFunc) {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+	server := &http.Server{Addr: ":8888", Handler: mux}
 	go func() {
 		<-quit
-		log.Println("Shutting down server...")
-		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 		defer cancel()
-		if err := server.Shutdown(ctx); err != nil {
-			log.Println("Server forced to shutdown:", err)
-		}
-		log.Println("Server exited gracefully")
+		defer func(server *http.Server, ctx context.Context) {
+			if err := server.Shutdown(ctx); err != nil {
+				log.Println("Server Shutdown error:", err)
+			}
+		}(server, ctx)
+		log.Println("Shutting down server...")
 	}()
 	log.Println("Starting Server, listening on", server.Addr)
 	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {

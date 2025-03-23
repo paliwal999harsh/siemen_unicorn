@@ -59,7 +59,7 @@ func (s *RandomUnicornProducer) getNUniqueCapability(n int) []string {
 	rand.Shuffle(len(s.capabilities), func(i, j int) {
 		s.capabilities[i], s.capabilities[j] = s.capabilities[j], s.capabilities[i]
 	})
-	capabilitiesList := make([]string, 3)
+	capabilitiesList := make([]string, n)
 	copy(capabilitiesList, s.capabilities[:n])
 	return capabilitiesList
 }
