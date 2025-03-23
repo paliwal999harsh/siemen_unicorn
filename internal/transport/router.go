@@ -2,8 +2,8 @@ package transport
 
 import (
 	"net/http"
-	"unicorn/model"
-	"unicorn/utils"
+	"unicorn/pkg/model"
+	"unicorn/pkg/utils"
 )
 
 func RegisterHealthCheckRoute(mux *http.ServeMux) {

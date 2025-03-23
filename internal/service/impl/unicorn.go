@@ -1,9 +1,9 @@
 package impl
 
 import (
-	"unicorn/model"
-	"unicorn/service"
-	"unicorn/storage"
+	"unicorn/internal/service"
+	"unicorn/internal/storage"
+	"unicorn/pkg/model"
 )
 
 type unicornService struct {

@@ -6,8 +6,8 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
-	"unicorn/model"
-	"unicorn/utils"
+	"unicorn/pkg/model"
+	"unicorn/pkg/utils"
 )
 
 type UnicornFactory interface {
@@ -33,7 +33,7 @@ func loadData() UnicornFactory {
 	if err != nil {
 		log.Fatal("unable to get home dir", err)
 	}
-	dir = filepath.Join(dir, "GolandProjects/unicorn-main")
+	dir = filepath.Join(dir, "GolandProjects/unicorn-main/internal")
 	names := utils.LoadContentFromFile(filepath.Join(dir, "res/petnames.txt"))
 	adj := utils.LoadContentFromFile(filepath.Join(dir, "res/adj.txt"))
 	capabilities := utils.LoadContentFromFile(filepath.Join(dir, "res/capabilities.txt"))

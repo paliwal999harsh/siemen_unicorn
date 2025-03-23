@@ -3,9 +3,9 @@ package impl
 import (
 	"fmt"
 	"time"
-	"unicorn/model"
-	"unicorn/service"
-	"unicorn/storage"
+	"unicorn/internal/service"
+	"unicorn/internal/storage"
+	"unicorn/pkg/model"
 )
 
 type unicornRequestService struct {

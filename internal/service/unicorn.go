@@ -1,7 +1,7 @@
 package service
 
 import (
-	"unicorn/model"
+	"unicorn/pkg/model"
 )
 
 type UnicornService interface {

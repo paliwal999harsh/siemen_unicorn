@@ -1,6 +1,6 @@
 package service
 
-import "unicorn/model"
+import "unicorn/pkg/model"
 
 type UnicornRequestService interface {
 	CreateRequest(int) model.UnicornRequestId

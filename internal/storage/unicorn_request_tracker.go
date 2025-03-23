@@ -3,8 +3,8 @@ package storage
 import (
 	"log"
 	"sync"
-	"unicorn/model"
 	"unicorn/pkg/collection"
+	"unicorn/pkg/model"
 )
 
 type RequestTracker interface {

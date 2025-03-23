@@ -2,8 +2,8 @@ package storage
 
 import (
 	"sync"
-	"unicorn/model"
 	"unicorn/pkg/collection"
+	"unicorn/pkg/model"
 )
 
 type UnicornStore interface {

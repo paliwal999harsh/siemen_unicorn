@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"unicorn/model"
-	"unicorn/service"
-	"unicorn/utils"
+	"unicorn/internal/service"
+	"unicorn/pkg/model"
+	"unicorn/pkg/utils"
 )
 
 type UnicornHandler struct {
