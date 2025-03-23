@@ -27,15 +27,15 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	unicornProducer := storage.NewRandomUnicornProducer()
+	unicornFactory := storage.NewRandomUnicornProducer()
 	unicornStore := storage.NewInMemoryUnicornStore()
-	unicornRequestStorage := storage.NewInMemoryRequestTracker()
+	unicornRequestTracker := storage.NewInMemoryRequestTracker()
 
-	go unicornSupplier(ctx, unicornStore, unicornProducer)
-	go unicornRequestProcessor(ctx, unicornStore, unicornRequestStorage)
+	go unicornSupplier(ctx, unicornStore, unicornFactory)
+	go unicornRequestProcessor(ctx, unicornStore, unicornRequestTracker)
 
-	unicornService := impl.NewUnicornService(unicornStore, unicornRequestStorage)
-	unicornRequestService := impl.NewUnicornRequestService(unicornRequestStorage)
+	unicornService := impl.NewUnicornService(unicornStore, unicornRequestTracker)
+	unicornRequestService := impl.NewUnicornRequestService(unicornRequestTracker)
 
 	unicornHandler := transport.NewUnicornHandler(unicornService, unicornRequestService)
 
@@ -47,7 +47,7 @@ func main() {
 	setupServer(ctx, wrappedMux)
 }
 
-func unicornSupplier(ctx context.Context, storage storage.UnicornStore, producer storage.UnicornProducer) {
+func unicornSupplier(ctx context.Context, store storage.UnicornStore, factory storage.UnicornFactory) {
 	ticker := time.NewTicker(UnicornProductionInterval * time.Second)
 	defer ticker.Stop()
 	for {
@@ -55,14 +55,14 @@ func unicornSupplier(ctx context.Context, storage storage.UnicornStore, producer
 		case <-ctx.Done():
 			log.Println("Unicorn supplier stopped...")
 		case <-ticker.C:
-			if storage.AvailableUnicorns() < MaxStoreCapacity {
-				storage.SaveUnicorn(producer.CreateUnicorn())
+			if store.AvailableUnicorns() < MaxStoreCapacity {
+				store.SaveUnicorn(factory.CreateUnicorn())
 			}
 		}
 	}
 }
 
-func unicornRequestProcessor(ctx context.Context, capacityManager storage.UnicornStore, unicornRequestStorage storage.RequestTracker) {
+func unicornRequestProcessor(ctx context.Context, unicornStore storage.UnicornStore, unicornRequestTracker storage.RequestTracker) {
 	ticker := time.NewTicker(RequestProcessingInterval * time.Second)
 	defer ticker.Stop()
 	for {
@@ -70,7 +70,7 @@ func unicornRequestProcessor(ctx context.Context, capacityManager storage.Unicor
 		case <-ctx.Done():
 			log.Println("Unicorn processor stopped...")
 		case <-ticker.C:
-			reqId, req, ok := unicornRequestStorage.GetNextRequest()
+			reqId, req, ok := unicornRequestTracker.GetNextRequest()
 			if !ok {
 				continue
 			}
@@ -78,17 +78,18 @@ func unicornRequestProcessor(ctx context.Context, capacityManager storage.Unicor
 				if req.AvailableAmount.Load() >= BatchProduction {
 					continue
 				}
-				unicornsAvailable := capacityManager.Capacity()
+				unicornsAvailable := unicornStore.Capacity()
 				if unicornsAvailable > 0 {
-					take := min(BatchProduction, req.RequestedAmount-int(req.ReceivedAmount.Load()), unicornsAvailable)
-					capacityManager.DecreaseCapacity(take)
+					take := min(BatchProduction, req.RequestedAmount-int(req.ReceivedAmount.Load()),
+						BatchProduction-int(req.AvailableAmount.Load()), unicornsAvailable)
+					unicornStore.DecreaseCapacity(take)
 					req.AvailableAmount.Add(int32(take))
 					req.Status = model.UnicornRequestInProgress
-					unicornRequestStorage.UpdateRequest(reqId, req)
+					unicornRequestTracker.UpdateRequest(reqId, req)
 					log.Printf("Fulfilling request: %s, Have: %d, Given %d/%d\n", reqId, req.AvailableAmount.Load(), req.ReceivedAmount.Load(), req.RequestedAmount)
 				}
 				if int(req.ReceivedAmount.Load()+req.AvailableAmount.Load()) < req.RequestedAmount {
-					unicornRequestStorage.RequeueRequest(reqId, req)
+					unicornRequestTracker.RequeueRequest(reqId, req)
 				}
 			}
 		}

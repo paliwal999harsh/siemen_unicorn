@@ -2,12 +2,15 @@ package storage
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
+	"os"
+	"path/filepath"
 	"unicorn/model"
 	"unicorn/utils"
 )
 
-type UnicornProducer interface {
+type UnicornFactory interface {
 	CreateUnicorn() model.Unicorn
 }
 type RandomUnicornProducer struct {
@@ -23,10 +26,15 @@ func (s *RandomUnicornProducer) CreateUnicorn() model.Unicorn {
 	}
 }
 
-func loadData() UnicornProducer {
-	names := utils.LoadContentFromFile("res/petnames.txt")
-	adj := utils.LoadContentFromFile("res/adj.txt")
-	capabilities := utils.LoadContentFromFile("res/capabilities.txt")
+func loadData() UnicornFactory {
+	dir, err := os.UserHomeDir()
+	if err != nil {
+		log.Fatal("unable to get home dir", err)
+	}
+	dir = filepath.Join(dir, "GolandProjects/unicorn-main")
+	names := utils.LoadContentFromFile(filepath.Join(dir, "res/petnames.txt"))
+	adj := utils.LoadContentFromFile(filepath.Join(dir, "res/adj.txt"))
+	capabilities := utils.LoadContentFromFile(filepath.Join(dir, "res/capabilities.txt"))
 	return &RandomUnicornProducer{
 		names:        names,
 		adjectives:   adj,
@@ -54,6 +62,6 @@ func (s *RandomUnicornProducer) getNUniqueCapability(n int) []string {
 	return capabilitiesList
 }
 
-func NewRandomUnicornProducer() UnicornProducer {
+func NewRandomUnicornProducer() UnicornFactory {
 	return loadData()
 }

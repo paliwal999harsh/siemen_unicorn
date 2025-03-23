@@ -6,7 +6,7 @@
 
 * if the unicorn is produced it should be returned though using fifo principle
 
-* adjust the code, so that every x seconds a new unicorn is produced at put to a store, which can be used to fulfill the requests (LIFO Store)
+* adjust the code, so that every x seconds a new unicorn is produced at put to a store, which can be used to fulfill the requestQueue (LIFO Store)
 
 * make sure, duplicate capabilities are not added to the unicorn
 

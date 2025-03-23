@@ -8,18 +8,18 @@ import (
 
 type unicornService struct {
 	unicornStore          storage.UnicornStore
-	unicornRequestStorage storage.RequestTracker
+	unicornRequestTracker storage.RequestTracker
 }
 
 func NewUnicornService(unicornStore storage.UnicornStore,
-	unicornRequestStorage storage.RequestTracker) service.UnicornService {
+	unicornRequestTracker storage.RequestTracker) service.UnicornService {
 	return &unicornService{
 		unicornStore:          unicornStore,
-		unicornRequestStorage: unicornRequestStorage}
+		unicornRequestTracker: unicornRequestTracker}
 }
 
 func (s *unicornService) GetUnicorn(reqId model.UnicornRequestId) []model.Unicorn {
-	req, ok := s.unicornRequestStorage.GetRequest(reqId)
+	req, ok := s.unicornRequestTracker.GetRequest(reqId)
 	if !ok {
 		return nil
 	}
@@ -33,7 +33,7 @@ func (s *unicornService) GetUnicorn(reqId model.UnicornRequestId) []model.Unicor
 		if int(req.ReceivedAmount.Load()) == req.RequestedAmount {
 			req.Status = model.UnicornRequestCompleted
 		}
-		s.unicornRequestStorage.UpdateRequest(reqId, req)
+		s.unicornRequestTracker.UpdateRequest(reqId, req)
 		return s.unicornStore.GetUnicorns(int(take))
 	}
 	return nil
