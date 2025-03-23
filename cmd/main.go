@@ -18,10 +18,9 @@ import (
 )
 
 const (
-	MaxStoreCapacity          = 100
 	BatchProduction           = 10
 	UnicornProductionInterval = 5
-	RequestProcessingInterval = 5
+	RequestProcessingInterval = 2
 )
 
 func main() {
@@ -56,7 +55,7 @@ func unicornSupplier(ctx context.Context, store storage.UnicornStore, factory fa
 		case <-ctx.Done():
 			log.Println("Unicorn supplier stopped...")
 		case <-ticker.C:
-			if store.AvailableUnicorns() < MaxStoreCapacity {
+			if !store.IsAtCapacity() {
 				unicorn := factory.CreateUnicorn()
 				log.Println("Unicorn...", unicorn)
 				store.SaveUnicorn(unicorn)

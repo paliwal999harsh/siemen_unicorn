@@ -12,16 +12,15 @@ type UnicornStore interface {
 	AvailableUnicorns() int
 	Capacity() int
 	DecreaseCapacity(int)
+	IsAtCapacity() bool
 }
+
+const MaxStoreCapacity = 100
 
 type InMemoryUnicornStore struct {
 	unicorns collection.Stack[model.Unicorn]
 	capacity int
 	sync.Mutex
-}
-
-func NewInMemoryUnicornStore() UnicornStore {
-	return &InMemoryUnicornStore{unicorns: collection.NewSliceStack[model.Unicorn](), capacity: 0}
 }
 
 func (us *InMemoryUnicornStore) SaveUnicorn(u model.Unicorn) {
@@ -65,4 +64,15 @@ func (us *InMemoryUnicornStore) DecreaseCapacity(capacity int) {
 	defer us.Unlock()
 
 	us.capacity -= capacity
+}
+
+func (us *InMemoryUnicornStore) IsAtCapacity() bool {
+	us.Lock()
+	defer us.Unlock()
+
+	return us.unicorns.Size() >= MaxStoreCapacity
+}
+
+func NewInMemoryUnicornStore() UnicornStore {
+	return &InMemoryUnicornStore{unicorns: collection.NewSliceStack[model.Unicorn](), capacity: 0}
 }

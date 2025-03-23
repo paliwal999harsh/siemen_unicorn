@@ -8,7 +8,7 @@ import (
 func GetAsJsonString(obj any) string {
 	data, err := json.Marshal(obj)
 	if err != nil {
-		log.Println("error occured while forming json string", err)
+		log.Println("error occurred while forming json string", err)
 	}
 	return string(data)
 }
