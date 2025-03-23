@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/json"
+	"fmt"
 	"sync/atomic"
 )
 
@@ -36,6 +37,11 @@ type UnicornRequest struct {
 	RequestedAmount int
 	ReceivedAmount  atomic.Int32
 	AvailableAmount atomic.Int32
+}
+
+func (u *UnicornRequest) String() string {
+	return fmt.Sprintf("UnicornRequest{Status: %d, RequestedAmount: %d, ReceivedAmount: %d, AvailableAmount: %d}",
+		u.Status, u.RequestedAmount, u.ReceivedAmount.Load(), u.AvailableAmount.Load())
 }
 
 func (u *UnicornRequest) MarshalJSON() ([]byte, error) {

@@ -1,4 +1,4 @@
-package storage
+package factory
 
 import (
 	"fmt"
@@ -17,11 +17,13 @@ type RandomUnicornProducer struct {
 	names        []string
 	adjectives   []string
 	capabilities []string
+	counter      int
 }
 
 func (s *RandomUnicornProducer) CreateUnicorn() model.Unicorn {
+	s.counter++
 	return model.Unicorn{
-		Name:         fmt.Sprintf("%s - %s", s.getName(), s.getAdjective()),
+		Name:         fmt.Sprintf("%d - %s - %s", s.counter, s.getName(), s.getAdjective()),
 		Capabilities: s.getNUniqueCapability(3),
 	}
 }

@@ -3,6 +3,7 @@ package storage
 import (
 	"sync"
 	"unicorn/model"
+	"unicorn/pkg/collection"
 )
 
 type UnicornStore interface {
@@ -14,19 +15,19 @@ type UnicornStore interface {
 }
 
 type InMemoryUnicornStore struct {
-	unicorns []model.Unicorn
+	unicorns collection.Stack[model.Unicorn]
 	capacity int
 	sync.Mutex
 }
 
 func NewInMemoryUnicornStore() UnicornStore {
-	return &InMemoryUnicornStore{unicorns: make([]model.Unicorn, 0, 100), capacity: 0}
+	return &InMemoryUnicornStore{unicorns: collection.NewSliceStack[model.Unicorn](), capacity: 0}
 }
 
 func (us *InMemoryUnicornStore) SaveUnicorn(u model.Unicorn) {
 	us.Lock()
 	defer us.Unlock()
-	us.unicorns = append([]model.Unicorn{u}, us.unicorns...)
+	_, _ = us.unicorns.Push(u)
 	us.capacity++
 }
 
@@ -34,11 +35,14 @@ func (us *InMemoryUnicornStore) GetUnicorns(amount int) []model.Unicorn {
 	us.Lock()
 	defer us.Unlock()
 
-	if len(us.unicorns) == 0 {
+	if us.unicorns.Empty() {
 		return nil
 	}
-	unicorns := us.unicorns[len(us.unicorns)-amount:]
-	us.unicorns = us.unicorns[:len(us.unicorns)-amount]
+	var unicorns []model.Unicorn
+	for range amount {
+		unicorn, _ := us.unicorns.Pop()
+		unicorns = append(unicorns, unicorn)
+	}
 	return unicorns
 }
 
@@ -46,7 +50,7 @@ func (us *InMemoryUnicornStore) AvailableUnicorns() int {
 	us.Lock()
 	defer us.Unlock()
 
-	return len(us.unicorns)
+	return us.unicorns.Size()
 }
 
 func (us *InMemoryUnicornStore) Capacity() int {

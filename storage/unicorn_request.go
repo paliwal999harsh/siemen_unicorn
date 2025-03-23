@@ -1,8 +1,10 @@
 package storage
 
 import (
+	"log"
 	"sync"
 	"unicorn/model"
+	"unicorn/pkg/collection"
 )
 
 type RequestTracker interface {
@@ -13,8 +15,8 @@ type RequestTracker interface {
 	RequeueRequest(model.UnicornRequestId, *model.UnicornRequest)
 }
 type InMemoryRequestTracker struct {
-	requestQueue []model.UnicornRequestId
-	requests     map[model.UnicornRequestId]*model.UnicornRequest
+	requestQueue collection.Queue[model.UnicornRequestId]
+	requests     collection.Map[model.UnicornRequestId, *model.UnicornRequest] // map[model.UnicornRequestId]*model.UnicornRequest
 	sync.Mutex
 }
 
@@ -22,27 +24,26 @@ func (rt *InMemoryRequestTracker) GetNextRequest() (model.UnicornRequestId, *mod
 	rt.Lock()
 	defer rt.Unlock()
 
-	if len(rt.requestQueue) == 0 {
-		return model.UnicornRequestId(rune(0)), &model.UnicornRequest{}, false
+	if rt.requestQueue.Empty() {
+		return model.UnicornRequestId(rune(0)), nil, false
 	}
 
-	reqId := rt.requestQueue[0]
-	rt.requestQueue = rt.requestQueue[1:]
-	req := rt.requests[reqId]
+	reqId, err := rt.requestQueue.Poll()
+	if err != nil {
+		return model.UnicornRequestId(rune(0)), nil, false
+	}
+	req, ok := rt.requests.Get(reqId)
+	if !ok {
+		return model.UnicornRequestId(rune(0)), nil, false
+	}
 	return reqId, req, true
 }
 
 func (rt *InMemoryRequestTracker) RequeueRequest(id model.UnicornRequestId, req *model.UnicornRequest) {
 	rt.Lock()
 	defer rt.Unlock()
-	rt.requestQueue = append(rt.requestQueue, id)
-	rt.requests[id] = req
-}
-
-func NewInMemoryRequestTracker() RequestTracker {
-	return &InMemoryRequestTracker{
-		requests: make(map[model.UnicornRequestId]*model.UnicornRequest),
-	}
+	_, _ = rt.requestQueue.Offer(id)
+	rt.requests.Put(id, req)
 }
 
 func (rt *InMemoryRequestTracker) CreateRequest(id model.UnicornRequestId, amount int) {
@@ -52,25 +53,35 @@ func (rt *InMemoryRequestTracker) CreateRequest(id model.UnicornRequestId, amoun
 		Status:          model.UnicornRequestQueued,
 		RequestedAmount: amount,
 	}
-	rt.requestQueue = append(rt.requestQueue, id)
-	rt.requests[id] = &req
+	ok, _ := rt.requestQueue.Offer(id)
+	if !ok {
+		log.Println("unable to queue the request")
+	}
+	rt.requests.Put(id, &req)
 }
 
 func (rt *InMemoryRequestTracker) GetRequest(id model.UnicornRequestId) (*model.UnicornRequest, bool) {
 	rt.Lock()
 	defer rt.Unlock()
-	if val, exists := rt.requests[id]; exists {
+	if val, exists := rt.requests.Get(id); exists {
 		return val, true
 	}
-	return &model.UnicornRequest{}, false
+	return nil, false
 }
 
 func (rt *InMemoryRequestTracker) UpdateRequest(id model.UnicornRequestId, req *model.UnicornRequest) bool {
 	rt.Lock()
 	defer rt.Unlock()
-	if _, exists := rt.requests[id]; !exists {
+	if _, exists := rt.requests.Get(id); !exists {
 		return false
 	}
-	rt.requests[id] = req
+	rt.requests.Put(id, req)
 	return true
+}
+
+func NewInMemoryRequestTracker() RequestTracker {
+	return &InMemoryRequestTracker{
+		requestQueue: collection.NewSliceQueue[model.UnicornRequestId](),
+		requests:     collection.NewNativeMap[model.UnicornRequestId, *model.UnicornRequest](),
+	}
 }

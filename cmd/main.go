@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+	"unicorn/factory"
 	"unicorn/middleware"
 	"unicorn/model"
 	"unicorn/service/impl"
@@ -27,7 +28,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	unicornFactory := storage.NewRandomUnicornProducer()
+	unicornFactory := factory.NewRandomUnicornProducer()
 	unicornStore := storage.NewInMemoryUnicornStore()
 	unicornRequestTracker := storage.NewInMemoryRequestTracker()
 
@@ -47,7 +48,7 @@ func main() {
 	setupServer(ctx, wrappedMux)
 }
 
-func unicornSupplier(ctx context.Context, store storage.UnicornStore, factory storage.UnicornFactory) {
+func unicornSupplier(ctx context.Context, store storage.UnicornStore, factory factory.UnicornFactory) {
 	ticker := time.NewTicker(UnicornProductionInterval * time.Second)
 	defer ticker.Stop()
 	for {
@@ -56,7 +57,9 @@ func unicornSupplier(ctx context.Context, store storage.UnicornStore, factory st
 			log.Println("Unicorn supplier stopped...")
 		case <-ticker.C:
 			if store.AvailableUnicorns() < MaxStoreCapacity {
-				store.SaveUnicorn(factory.CreateUnicorn())
+				unicorn := factory.CreateUnicorn()
+				log.Println("Unicorn...", unicorn)
+				store.SaveUnicorn(unicorn)
 			}
 		}
 	}
