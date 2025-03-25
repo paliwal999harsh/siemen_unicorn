@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY . .
 
-RUN go build -o unicorn_app ./cmd/main.go
+RUN go build -o unicorn_app ./cmd
 
 FROM alpine:3.21.3
 

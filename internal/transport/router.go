@@ -21,5 +21,5 @@ func RegisterHealthCheckRoute(mux *http.ServeMux) {
 func RegisterUnicornRoutes(mux *http.ServeMux, unicornHandler UnicornHandler) {
 	mux.HandleFunc("/api/v1/unicorn", unicornHandler.GetUnicorn)
 	mux.HandleFunc("/api/v1/unicorn/request", unicornHandler.RequestUnicorn)
-	mux.HandleFunc("/api/v1/unicorn/request/", unicornHandler.CheckRequestStatus)
+	mux.HandleFunc("/api/v1/unicorn/request/{id}", unicornHandler.CheckRequestStatus)
 }

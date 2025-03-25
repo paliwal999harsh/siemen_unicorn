@@ -38,7 +38,7 @@ func unicornRequestProcessor(ctx context.Context, wg *sync.WaitGroup, unicornSto
 	for {
 		select {
 		case <-ctx.Done():
-			log.Println("Unicorn processor stopped...")
+			log.Println("Unicorn request processor stopped...")
 			return
 		case <-ticker.C:
 			reqId, req, ok := unicornRequestTracker.GetNextRequest()
